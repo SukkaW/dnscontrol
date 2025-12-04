@@ -333,16 +333,24 @@ var AKAMAICDN = recordBuilder('AKAMAICDN');
 
 // AKAMAITLC(name, answer_type, target, recordModifiers...)
 var AKAMAITLC = recordBuilder('AKAMAITLC', {
-  args: [
-    ['name', _.isString],
-    ['answer_type', function(value) { return _.isString(value) && ['DUAL', 'A', 'AAAA'].indexOf(value) !== -1; }],
-    ['target', _.isString],
-  ],
-  transform: function (record, args, modifier) {
-    record.name = args.name;
-    record.answer_type = args.answer_type;
-    record.target = args.target;
-  },
+    args: [
+        ['name', _.isString],
+        [
+            'answer_type',
+            function (value) {
+                return (
+                    _.isString(value) &&
+                    ['DUAL', 'A', 'AAAA'].indexOf(value) !== -1
+                );
+            },
+        ],
+        ['target', _.isString],
+    ],
+    transform: function (record, args, modifier) {
+        record.name = args.name;
+        record.answer_type = args.answer_type;
+        record.target = args.target;
+    },
 });
 
 // ALIAS(name,target, recordModifiers...)
@@ -683,20 +691,20 @@ var TXT = recordBuilder('TXT', {
 });
 
 var LUA = recordBuilder('LUA', {
-  args: [
-    ['name', _.isString],
-    ['rtype', _.isString],
-    ['target', isStringOrArray],
-  ],
-  transform: function (record, args, modifiers) {
-    record.name = args.name;
-    record.luartype = args.rtype.toUpperCase();
-    if (_.isString(args.target)) {
-      record.target = args.target;
-    } else {
-      record.target = args.target.join('');
-    }
-  },
+    args: [
+        ['name', _.isString],
+        ['rtype', _.isString],
+        ['target', isStringOrArray],
+    ],
+    transform: function (record, args, modifiers) {
+        record.name = args.name;
+        record.luartype = args.rtype.toUpperCase();
+        if (_.isString(args.target)) {
+            record.target = args.target;
+        } else {
+            record.target = args.target.join('');
+        }
+    },
 });
 
 // Parses coordinates of the form 41°24'12.2"N 2°10'26.5"E
@@ -1161,6 +1169,29 @@ function PURGE(d) {
 // NO_PURGE()
 function NO_PURGE(d) {
     d.KeepUnknown = true;
+}
+
+// IGNORE_EXTERNAL_DNS(prefix)
+// When enabled, DNSControl will automatically detect TXT records created by
+// Kubernetes external-dns and ignore both the TXT records and the corresponding
+// DNS records they manage. External-dns creates TXT records with content like:
+// "heritage=external-dns,external-dns/owner=<owner-id>,external-dns/resource=<resource>"
+// This allows DNSControl to coexist with external-dns in the same zone.
+//
+// Optional prefix parameter: If your external-dns is configured with a custom
+// --txt-prefix (e.g., "extdns-"), pass it here to detect those records.
+// Without a prefix, it detects the default format ("%{record_type}-" prefixes like "a-", "cname-").
+//
+// Usage:
+//   IGNORE_EXTERNAL_DNS()           // Use default detection (a-, cname-, etc.)
+//   IGNORE_EXTERNAL_DNS("extdns-") // Custom prefix
+function IGNORE_EXTERNAL_DNS(prefix) {
+    return function (d) {
+        d.ignore_external_dns = true;
+        if (prefix) {
+            d.external_dns_prefix = prefix;
+        }
+    };
 }
 
 // ENSURE_ABSENT_REC()
